@@ -12,16 +12,23 @@
     <a href="../inventory.html">Inventory</a>
     </nav>
 
-    <h1>Update Inventory</h1>
+    <h1>Delivery Dashboard</h1>
 
-    <label>Select Item:</label>
-    <select id="itemSelect"></select>
+  <div class="card">
+    <h3>Update Inventory After Delivery</h3>
 
-    <label>Amount Delivered:</label>
-    <input type="number" id="changeAmount">
+    <!-- Dropdown for selecting item -->
+    <select id="itemSelect">
+      <option value="" disabled selected>Select an item</option>
+    </select>
 
-    <button onclick="updateItem()">Submit</button>
+    <!-- Input for quantity delivered -->
+    <input type="number" id="changeAmount" placeholder="Quantity delivered">
 
-    <script src="app.js"></script>
+    <!-- Update button -->
+    <button id="updateBtn">Update Inventory</button>
+  </div>
+
+    <script type="module" src="app.js"></script>
 </body>
 </html>

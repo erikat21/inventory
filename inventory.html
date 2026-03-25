@@ -12,10 +12,20 @@
     <a href="../inventory.html">Inventory</a>
     </nav>
 
-    <h1>Inventory List</h1>
+  <h1>Inventory Dashboard</h1>
 
-    <ul id="inventoryList"></ul>
+  <div class="card">
+    <h3>Add New Item</h3>
+    <input type="text" id="newItemName" placeholder="Item name">
+    <input type="number" id="newItemQty" placeholder="Starting quantity">
+    <button id="addBtn">Add Item</button>
+  </div>
 
-    <script src="app.js"></script>
+  <div class="card">
+    <h3>Inventory List</h3>
+    <div id="inventoryList"></div>
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
