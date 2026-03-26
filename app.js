@@ -8,7 +8,9 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
-  doc 
+  doc,
+  deleteDoc,
+  getDoc 
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 // ======================
@@ -65,9 +67,12 @@ async function displayInventory() {
     const statusText = item.quantity < 20 ? "Low Stock" : "In Stock";
 
     card.innerHTML = `
-      <div class="item-name">${item.name}</div>
-      <div class="item-qty">Quantity: ${item.quantity}</div>
-      <div class="badge ${statusClass}">${statusText}</div>
+        <div class="item-name">${item.name}</div>
+        <div class="item-qty">Quantity: ${item.quantity}</div>
+        <div class="badge ${statusClass}">${statusText}</div>
+        <input type="number" placeholder="Add stock" class="restockInput" data-id="${item.id}">
+        <button class = "restockBtn" data-id = "${item.id}">Restock</button>
+        <button class="deleteBtn" data-id="${item.id}">Delete</button>
     `;
     container.appendChild(card);
   });
@@ -106,7 +111,7 @@ async function loadDropdown() {
   const select = document.getElementById("itemSelect");
   if (!select) return;
 
-  select.innerHTML = "";
+  select.innerHTML = '<option disabled selected>Select an item</option>';
   const inventory = await loadInventory();
 
   inventory.forEach(item => {
@@ -124,12 +129,21 @@ async function updateItem() {
   const id = document.getElementById("itemSelect").value;
   const change = Number(document.getElementById("changeAmount").value);
 
+  if (!id) {
+  alert("Select an item first");
+  return;
+}
+
   if (change <= 0) {
     alert("Enter a valid amount");
     return;
   }
 
   const item = itemsMap[id];
+  if (change > item.quantity){
+    alert("That is more than what we have in our inventory list, enter a valid amount");
+    return;
+  }
   const newQty = item.quantity - change;
 
   await updateDoc(doc(db, "inventory", id), { quantity: newQty });
@@ -156,4 +170,42 @@ window.addEventListener("DOMContentLoaded", () => {
   // Initial load
   displayInventory();
   loadDropdown();
+});
+
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("deleteBtn")) {
+    const id = e.target.dataset.id;
+
+    const confirmDelete = confirm("Delete this item?");
+    if (!confirmDelete) return;
+
+    await deleteDoc(doc(db, "inventory", id));
+    displayInventory();
+  }
+});
+
+document.addEventListener("click", async (e) => {
+  // RESTOCK
+  if (e.target.classList.contains("restockBtn")) {
+    const id = e.target.dataset.id;
+
+    const input = document.querySelector(`.restockInput[data-id="${id}"]`);
+    const amount = Number(input.value);
+
+    if (amount <= 0) {
+      alert("Enter a valid amount");
+      return;
+    }
+
+    const item = itemsMap[id];
+    const newQty = item.quantity + amount;
+
+    const confirmRestock = confirm(`Add ${amount} units to ${item.name}?`);
+    if (!confirmRestock) return;
+
+    await updateDoc(doc(db, "inventory", id), { quantity: newQty });
+
+    input.value = "";
+    displayInventory();
+  }
 });
