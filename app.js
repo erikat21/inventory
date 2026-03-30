@@ -59,6 +59,7 @@ async function displayInventory() {
 
   container.innerHTML = "";
   const inventory = await loadInventory();
+  inventory.sort((a, b) => a.quantity - b.quantity);
 
   inventory.forEach(item => {
     const card = document.createElement("div");
@@ -76,6 +77,26 @@ async function displayInventory() {
     `;
     container.appendChild(card);
   });
+  showLowStockWarning(inventory);
+}
+
+function showLowStockWarning(inventory) {
+  const warningDiv = document.getElementById("lowStockWarning");
+  if (!warningDiv) return;
+
+  const lowStockItems = inventory.filter(item => item.quantity < 20);
+
+  if (lowStockItems.length === 0) {
+    warningDiv.innerHTML = "";
+    return;
+  }
+
+  warningDiv.innerHTML = `
+    <div class="warning-box">
+      ⚠️ Low Stock Items:<br>
+      ${lowStockItems.map(item => `${item.name} (${item.quantity})`).join("<br>")}
+    </div>
+  `;
 }
 
 // ======================

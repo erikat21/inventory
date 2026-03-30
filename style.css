@@ -23,3 +23,12 @@ input, select, button {
 button {
   cursor: pointer;
 }
+
+.card.low {
+  border: 2px solid red;
+  background-color: #ffecec;
+}
+
+.card.ok {
+  border: 1px solid #ccc;
+}
