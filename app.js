@@ -230,3 +230,20 @@ document.addEventListener("click", async (e) => {
     displayInventory();
   }
 });
+
+const links = document.querySelectorAll("nav a");
+
+let currentPage = window.location.pathname.split("/").pop();
+
+// Handle homepage ("/" → index.html)
+if (currentPage === "" || currentPage === "/") {
+  currentPage = "index.html";
+}
+
+links.forEach(link => {
+  const href = link.getAttribute("href");
+
+  if (href === currentPage) {
+    link.classList.add("current");
+  }
+});

@@ -1,12 +1,40 @@
+:root {
+    --color-accent: rgb(255, 112, 183);
+}
+
 body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
+    font: 100%/1.5 system-ui;
+    max-width: 100ch;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+nav {
+    display: flex;
+    border-bottom: 1px solid oklch(80% 3% 200 / 60%);
+    margin-top: 1.5rem;
+    padding: 0;
 }
 
 nav a {
-  margin-right: 15px;
-  text-decoration: none;
-  font-weight: bold;
+    flex: 1;
+    font-size: 20px;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    color: var(--color-accent);
+}
+
+nav a.current {
+    border-bottom: 0.4em solid oklch(80% 3% 200 / 60%);
+    padding-bottom: 0.6em;
+    font-weight: bold;
+}
+
+nav a:hover {
+    border-bottom: 0.4em solid var(--color-accent);
+    padding-bottom: 0.6em;
+    background-color: color-mix(in oklch, var(--color-accent), canvas 85%);
 }
 
 h1 {
