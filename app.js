@@ -53,31 +53,134 @@ async function loadInventory() {
 // ======================
 // DISPLAY INVENTORY
 // ======================
-async function displayInventory() {
+// async function displayInventory() {
+//   const container = document.getElementById("inventoryList");
+//   if (!container) return; // skip if not on this page
+
+//   container.innerHTML = "";
+//   const inventory = await loadInventory();
+//   inventory.sort((a, b) => a.quantity - b.quantity);
+
+//   inventory.forEach(item => {
+//     const card = document.createElement("div");
+//     card.className = "card";
+//     const statusClass = item.quantity < 20 ? "low" : "ok";
+//     const statusText = item.quantity < 20 ? "Low Stock" : "In Stock";
+
+//     card.innerHTML = `
+//         <div class="item-name">${item.name}</div>
+//         <div class="item-qty">Quantity: ${item.quantity}</div>
+//         <div class="badge ${statusClass}">${statusText}</div>
+//         <input type="number" placeholder="Add stock" class="restockInput" data-id="${item.id}">
+//         <button class = "restockBtn" data-id = "${item.id}">Restock</button>
+//         <button class="deleteBtn" data-id="${item.id}">Delete</button>
+//     `;
+//     container.appendChild(card);
+//   });
+//   showLowStockWarning(inventory);
+// }
+
+async function displayInventory(searchTerm = "") {
   const container = document.getElementById("inventoryList");
-  if (!container) return; // skip if not on this page
+  if (!container) return;
 
   container.innerHTML = "";
-  const inventory = await loadInventory();
-  inventory.sort((a, b) => a.quantity - b.quantity);
 
-  inventory.forEach(item => {
+  const inventory = await loadInventory();
+
+  // 🔍 FILTER LOGIC
+  const filtered = inventory.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Remove duplicates by ID
+  const uniqueItems = Array.from(
+    new Map(filtered.map(item => [item.id, item])).values()
+  );
+
+  // Sort by quantity
+  uniqueItems.sort((a, b) => a.quantity - b.quantity);
+
+  // Render cards
+  uniqueItems.forEach(item => {
     const card = document.createElement("div");
-    card.className = "card";
     const statusClass = item.quantity < 20 ? "low" : "ok";
     const statusText = item.quantity < 20 ? "Low Stock" : "In Stock";
 
+    card.className = `card ${statusClass}`;
+
     card.innerHTML = `
-        <div class="item-name">${item.name}</div>
-        <div class="item-qty">Quantity: ${item.quantity}</div>
-        <div class="badge ${statusClass}">${statusText}</div>
-        <input type="number" placeholder="Add stock" class="restockInput" data-id="${item.id}">
-        <button class = "restockBtn" data-id = "${item.id}">Restock</button>
-        <button class="deleteBtn" data-id="${item.id}">Delete</button>
+      <div class="item-name">${item.name}</div>
+      <div class="item-qty">Quantity: ${item.quantity}</div>
+      <div class="badge ${statusClass}">${statusText}</div>
+      <input type="number" placeholder="Add stock" class="restockInput" data-id="${item.id}">
+      <button class="restockBtn" data-id="${item.id}">Restock</button>
+      <button class="deleteBtn" data-id="${item.id}">Delete</button>
     `;
+
     container.appendChild(card);
   });
-  showLowStockWarning(inventory);
+
+  showLowStockWarning(uniqueItems);
+}
+
+async function setupInventorySearch() {
+  const input = document.getElementById("searchInput");
+  const resultsDiv = document.getElementById("inventorySearchResults");
+
+  if (!input) return;
+
+  async function renderList(query = "") {
+    const inventory = await loadInventory();
+
+    resultsDiv.innerHTML = "";
+
+    // Normalize query
+    const searchQuery = query.trim().toLowerCase();
+
+    // Filter items by inclusion
+    const filtered = inventory.filter(item =>
+      item.name.toLowerCase().includes(searchQuery)
+    );
+
+    if (filtered.length === 0) {
+      resultsDiv.style.display = "none";
+      displayInventory(""); // reset if nothing matches
+      return;
+    }
+
+    resultsDiv.style.display = "block";
+
+    filtered.forEach(item => {
+      const div = document.createElement("div");
+      div.textContent = `${item.name} (${item.quantity})`;
+
+      div.addEventListener("click", () => {
+        input.value = item.name;
+        resultsDiv.innerHTML = "";
+        resultsDiv.style.display = "none";
+
+        // 🔹 Filter inventory exactly
+        displayInventory(item.name);
+      });
+
+      resultsDiv.appendChild(div);
+    });
+
+    // 🔹 If user typed exact match, filter immediately
+    const exactMatch = inventory.find(item => item.name.toLowerCase() === searchQuery);
+    if (exactMatch) {
+      displayInventory(exactMatch.name);
+    } else if (searchQuery === "") {
+      displayInventory("");
+    }
+  }
+
+  // Show all items on focus
+  input.addEventListener("focus", () => renderList(""));
+
+  // Filter while typing
+  input.addEventListener("input", (e) => renderList(e.target.value));
 }
 
 function showLowStockWarning(inventory) {
@@ -94,7 +197,7 @@ function showLowStockWarning(inventory) {
   warningDiv.innerHTML = `
     <div class="warning-box">
       ⚠️ Low Stock Items:<br>
-      ${lowStockItems.map(item => `${item.name} (${item.quantity})`).join("<br>")}
+      ${lowStockItems.map(item => `${item.name}: ${item.quantity} left`).join("<br>")}
     </div>
   `;
 }
@@ -128,18 +231,60 @@ async function addItem() {
 // ======================
 // LOAD DROPDOWN FOR DELIVERY PAGE
 // ======================
-async function loadDropdown() {
-  const select = document.getElementById("itemSelect");
-  if (!select) return;
+let selectedItemId = null;
+// async function loadDropdown() {
+//   const select = document.getElementById("itemSelect");
+//   if (!select) return;
 
-  select.innerHTML = '<option disabled selected>Select an item</option>';
-  const inventory = await loadInventory();
+//   select.innerHTML = '<option disabled selected>Select an item</option>';
+//   const inventory = await loadInventory();
 
-  inventory.forEach(item => {
-    const option = document.createElement("option");
-    option.value = item.id;
-    option.textContent = item.name;
-    select.appendChild(option);
+//   inventory.forEach(item => {
+//     const option = document.createElement("option");
+//     option.value = item.id;
+//     option.textContent = item.name;
+//     select.appendChild(option);
+//   });
+// }
+
+async function setupSearch() {
+  const input = document.getElementById("itemSearch");
+  const resultsDiv = document.getElementById("searchResults");
+
+  if (!input) return;
+
+  // 🔥 FUNCTION TO RENDER LIST
+  async function renderList(query = "") {
+    const inventory = await loadInventory();
+
+    resultsDiv.innerHTML = "";
+
+    const filtered = inventory.filter(item =>
+      item.name.toLowerCase().includes(query.toLowerCase())
+    );
+    resultsDiv.style.display = "block";
+    filtered.forEach(item => {
+      const div = document.createElement("div");
+      div.textContent = `${item.name} (${item.quantity})`;
+
+      div.addEventListener("click", () => {
+        input.value = item.name;
+        selectedItemId = item.id;
+        resultsDiv.innerHTML = "";
+      });
+
+      resultsDiv.appendChild(div);
+    });
+  }
+
+  // 🔍 Show ALL items on focus
+  input.addEventListener("focus", () => {
+    renderList("");
+  });
+
+  // 🔍 Filter while typing
+  input.addEventListener("input", (e) => {
+    renderList(e.target.value);
   });
 }
 
@@ -147,7 +292,7 @@ async function loadDropdown() {
 // UPDATE ITEM QUANTITY (DELIVERY)
 // ======================
 async function updateItem() {
-  const id = document.getElementById("itemSelect").value;
+  const id = selectedItemId;
   const change = Number(document.getElementById("changeAmount").value);
 
   if (!id) {
@@ -170,7 +315,6 @@ async function updateItem() {
   await updateDoc(doc(db, "inventory", id), { quantity: newQty });
 
   document.getElementById("changeAmount").value = "";
-  loadDropdown();
   alert("Inventory updated!");
 }
 
@@ -187,10 +331,19 @@ window.addEventListener("DOMContentLoaded", () => {
   // Update button on Delivery page
   const updateBtn = document.getElementById("updateBtn");
   if (updateBtn) updateBtn.addEventListener("click", updateItem);
+  
+  const searchInput = document.getElementById("searchInput");
 
+if (searchInput) {
+  searchInput.addEventListener("input", (e) => {
+    displayInventory(e.target.value);
+  });
+}
   // Initial load
   displayInventory();
-  loadDropdown();
+  //loadDropdown();
+  setupSearch();
+  setupInventorySearch();
 });
 
 document.addEventListener("click", async (e) => {
@@ -245,5 +398,30 @@ links.forEach(link => {
 
   if (href === currentPage) {
     link.classList.add("current");
+  }
+});
+
+document.addEventListener("click", (e) => {
+  const searchInput = document.getElementById("itemSearch");
+  const resultsDiv = document.getElementById("searchResults");
+
+  const inventorySearchInput = document.getElementById("searchInput");
+  const inventoryResultsDiv = document.getElementById("inventorySearchResults");
+
+  // DELIVERY PAGE
+  if (searchInput && resultsDiv) {
+    if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+      resultsDiv.style.display = "none";
+    }
+  }
+
+  // INVENTORY PAGE
+  if (inventorySearchInput && inventoryResultsDiv) {
+    if (
+      !inventorySearchInput.contains(e.target) &&
+      !inventoryResultsDiv.contains(e.target)
+    ) {
+      inventoryResultsDiv.style.display = "none";
+    }
   }
 });
