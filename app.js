@@ -10,7 +10,12 @@ import {
   updateDoc, 
   doc,
   deleteDoc,
-  getDoc 
+  getDoc,
+  Timestamp,
+  query,
+  orderBy,
+  limit,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 // ======================
@@ -121,6 +126,7 @@ async function displayInventory(searchTerm = "") {
 
     card.innerHTML = `
       <div class="item-name">${item.name}</div>
+      <div class="item-vendor">Vendor: ${item.vendor}</div>
       <div class="item-qty">Quantity: ${item.quantity}</div>
       <div class="badge ${statusClass}">${statusText} (low stock threshold ${item.lowStockThreshold})</div>
       <input type="number" placeholder="Add stock" class="restockInput" data-id="${item.id}">
@@ -228,6 +234,7 @@ async function addItem() {
     const name = document.getElementById("newItemName").value.trim();
     const qty = Number(document.getElementById("newItemQty").value);
     const threshold = Number(document.getElementById("newItemThreshold")?.value) || 20;
+    const vendor = document.getElementById("itemVendor").value;
 
     if (!name || qty <= 0) {
       alert("Enter valid item name and quantity");
@@ -247,11 +254,13 @@ async function addItem() {
     await addDoc(collection(db, "inventory"), { 
       name, 
       quantity: qty,
-      lowStockThreshold: threshold
+      lowStockThreshold: threshold,
+      vendor: vendor
     });
 
     document.getElementById("newItemName").value = "";
     document.getElementById("newItemQty").value = "";
+    document.getElementById("itemVendor").value = "";
     if (document.getElementById("newItemThreshold")) document.getElementById("newItemThreshold").value = "";
 
     displayInventory();
@@ -328,33 +337,103 @@ async function setupSearch() {
 async function updateItem() {
   const id = selectedItemId;
   const change = Number(document.getElementById("changeAmount").value);
+  const deliveredTo = document.getElementById("deliveredTo").value;
+  const deliveredOnInput = document.getElementById("deliveredOn").value;
 
   if (!id) {
-  alert("Select an item first");
-  return;
-}
-
+    alert("Select an item first");
+    return;
+  }
   if (change <= 0) {
     alert("Enter a valid amount");
     return;
   }
 
   const item = itemsMap[id];
-  if (change > item.quantity){
+  if (change > item.quantity) {
     alert("That is more than what we have in our inventory list, enter a valid amount");
     return;
   }
+
   const newQty = item.quantity - change;
 
+  // Update inventory quantity
   await updateDoc(doc(db, "inventory", id), { quantity: newQty });
 
+  // Ensure a delivery date was selected
+  if (!deliveredOnInput) {
+    alert("Please select a delivery date");
+    return;
+  }
+
+  // Convert the input value to a JS Date (browser always gives ISO yyyy-mm-dd)
+  const deliveredOnDate = new Date(deliveredOnInput + "T00:00:00");
+  const deliveredOnTimestamp = Timestamp.fromDate(deliveredOnDate);
+
+  // Log the delivery in Firestore
+  await addDoc(collection(db, "deliveries"), {
+    itemId: id,
+    itemName: item.name,
+    quantity: change,
+    deliveredTo,
+    deliveredOn: deliveredOnTimestamp, // store strict date
+    timestamp: Timestamp.now()          // log creation timestamp
+  });
+
+  // Reset inputs
   document.getElementById("changeAmount").value = "";
-  alert("Inventory updated!");
+  document.getElementById("deliveredTo").value = "";
+  document.getElementById("deliveredOn").value = "";
   selectedItemId = null;
   document.getElementById("itemSearch").value = "";
+
+  alert("Inventory updated and delivery logged!");
 }
 
+// ======================
+// SETUP RECENT DELIVERIES
+// ======================
+// ======================
+// SETUP RECENT DELIVERIES
+// ======================
+async function setupRecentDeliveries() {
+  const deliveriesContainer = document.getElementById("recentDeliveries");
+  if (!deliveriesContainer) return; // skip if container doesn't exist
 
+  try {
+    // Query last 50 deliveries, ordered by deliveredOn descending
+    const deliveriesQuery = query(
+      collection(db, "deliveries"),
+      orderBy("deliveredOn", "desc"),
+      limit(50)
+    );
+
+    // Real-time listener
+    onSnapshot(deliveriesQuery, snapshot => {
+      deliveriesContainer.innerHTML = "";
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+
+        // deliveredOn is stored as Firestore Timestamp
+        let deliveredOn = "Unknown date";
+        if (data.deliveredOn && data.deliveredOn.toDate) {
+          deliveredOn = data.deliveredOn.toDate().toLocaleDateString();
+        }
+
+        const div = document.createElement("div");
+        div.className = "delivery-entry";
+        div.innerHTML = `
+          Item Delivered: <strong>${data.itemName}</strong> | Quantity Delivered: ${data.quantity} | Delivered to: ${data.deliveredTo} | Delivered On: ${deliveredOn}
+        `;
+        deliveriesContainer.appendChild(div);
+      });
+    });
+  } catch (err) {
+    console.error("Error loading recent deliveries:", err);
+    deliveriesContainer.innerHTML = `<div class="error">Failed to load deliveries</div>`;
+  }
+}
 
 // ======================
 // DOM CONTENT LOADED
@@ -417,6 +496,7 @@ if (updateBtn) {
 
   setupSearch();
   setupInventorySearch();
+  setupRecentDeliveries();
 });
 
 document.addEventListener("click", async (e) => {

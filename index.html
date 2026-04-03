@@ -14,23 +14,26 @@
 
     <h1>Delivery Dashboard</h1>
 
-  <div class="card">
-    <h3>Update Inventory After Delivery</h3>
+<div class="card">
+  <h3>Update Inventory After Delivery</h3>
 
-    <!-- Dropdown for selecting item -->
-    <!-- <select id="itemSelect">
-      <option value="" disabled selected>Select an item</option>
-    </select> -->
+  <div class="delivery-controls controls">
     <input type="text" id="itemSearch" placeholder="Search item...">
     <div id="searchResults" class="dropdown"></div>
 
-    <!-- Input for quantity delivered -->
     <input type="number" id="changeAmount" placeholder="Quantity delivered">
+    <input type="text" id="deliveredTo" placeholder="Delivered item to...">
+    <input type="date" id="deliveredOn" placeholder="Delivery date">
 
-    <!-- Update button -->
     <button id="updateBtn">Update Inventory</button>
   </div>
+</div>
 
+<div class="card">
+  <h3>Recent Deliveries</h3>
+  <div id="recentDeliveries"></div>
+</div>
+  
     <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -154,3 +154,73 @@ button {
 .controls select {
   min-width: 160px;
 }
+
+/* ======================
+   Recent Deliveries Styling
+====================== */
+#recentDeliveries {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+}
+
+.delivery-entry {
+  background-color: #f0f4f8; /* light blue-grey */
+  border-left: 4px solid var(--color-accent); /* blue accent */
+  padding: 10px 15px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.delivery-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+.delivery-entry strong {
+  color: var(--color-accent);
+}
+
+.delivery-entry br {
+  margin-bottom: 4px;
+}
+
+.delivery-controls {
+  display: flex;
+  flex-wrap: wrap;      /* wrap on small screens */
+  gap: 10px;            /* space between inputs */
+  align-items: center;  /* vertically align inputs */
+}
+
+.delivery-controls input {
+  flex: 1 1 150px;      /* grow, shrink, min-width 150px */
+  padding: 8px;
+  font-size: 16px;
+}
+
+.delivery-controls button {
+  flex: 0 0 auto;       /* button keeps its size */
+  padding: 8px 16px;
+  font-size: 16px;
+}
+
+.new-item {
+  display: flex;
+  flex-wrap: wrap;      /* wrap on small screens */
+  gap: 10px;            /* space between inputs */
+  align-items: center;  /* vertically align inputs */
+}
+
+.new-item input {
+  flex: 1 1 150px;      /* grow, shrink, min-width 150px */
+  padding: 8px;
+  font-size: 16px;
+}
+
+.new-item button {
+  flex: 0 0 auto;       /* button keeps its size */
+  padding: 8px 16px;
+  font-size: 16px;
+}
