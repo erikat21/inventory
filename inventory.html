@@ -22,12 +22,25 @@
     <input type="number" id="newItemQty" placeholder="Starting quantity">
     <button id="addBtn">Add Item</button>
   </div>
-
-
   
   <div class="card">
     <h3>Inventory List</h3>
-    <input type="text" id="searchInput" placeholder="Search items...">
+    <div class="controls">
+  <!-- <select id="filterSelect">
+    <option value="all">All Items</option>
+    <option value="low">Low Stock Only</option>
+    <option value="in">In Stock Only</option>
+  </select> -->
+
+  <select id="sortSelect">
+    <option value="qty-asc">Quantity (Low → High)</option>
+    <option value="qty-desc">Quantity (High → Low)</option>
+    <option value="name-asc">Name (A → Z)</option>
+    <option value="name-desc">Name (Z → A)</option>
+  </select>
+
+  <input type="text" id="searchInput" placeholder="Search items...">
+</div>
     <div id="inventorySearchResults" class="dropdown"></div>
 
     <div id="inventoryList"></div>

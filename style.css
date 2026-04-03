@@ -111,3 +111,46 @@ button {
 .dropdown div:hover {
   background-color: #f0f0f0;
 }
+
+.layout {
+  display: flex;
+  gap: 20px;
+}
+
+/* LEFT SIDEBAR */
+.sidebar {
+  width: 220px;
+  padding: 15px;
+  border-right: 1px solid #ccc;
+}
+
+.sidebar h3 {
+  margin-top: 0;
+}
+
+.sidebar label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap; /* prevents overflow on small screens */
+}
+
+.controls input {
+  flex: 1; /* makes search bar expand */
+  min-width: 150px;
+}
+
+.controls select {
+  min-width: 160px;
+}

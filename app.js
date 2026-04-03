@@ -35,7 +35,8 @@ const db = getFirestore(app);
 // GLOBAL VARIABLES
 // ======================
 let itemsMap = {};
-
+let currentSort = "qty-asc";   // ✅ default sort
+let currentFilter = "all";     // ✅ default filter
 // ======================
 // LOAD INVENTORY
 // ======================
@@ -88,20 +89,29 @@ async function displayInventory(searchTerm = "") {
 
   const inventory = await loadInventory();
 
-  // 🔍 FILTER LOGIC
-  const filtered = inventory.filter(item =>
+  // 🔍 SEARCH FILTER
+  let filtered = inventory.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Remove duplicates by ID
+  // 🔁 REMOVE DUPLICATES
   const uniqueItems = Array.from(
     new Map(filtered.map(item => [item.id, item])).values()
   );
 
-  // Sort by quantity
-  uniqueItems.sort((a, b) => a.quantity - b.quantity);
+  // 🔽 SORT (default = qty-asc)
+  if (currentSort === "name-asc") {
+    uniqueItems.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (currentSort === "name-desc") {
+    uniqueItems.sort((a, b) => b.name.localeCompare(a.name));
+  } else if (currentSort === "qty-desc") {
+    uniqueItems.sort((a, b) => b.quantity - a.quantity);
+  } else {
+    // ✅ DEFAULT
+    uniqueItems.sort((a, b) => a.quantity - b.quantity);
+  }
 
-  // Render cards
+  // 🎨 RENDER
   uniqueItems.forEach(item => {
     const card = document.createElement("div");
     const statusClass = item.quantity < 20 ? "low" : "ok";
@@ -129,7 +139,11 @@ async function setupInventorySearch() {
   const resultsDiv = document.getElementById("inventorySearchResults");
 
   if (!input) return;
-
+  input.addEventListener("focus", () => {
+  input.value = "";          // clear search box
+  resultsDiv.innerHTML = ""; // hide previous results
+  resultsDiv.style.display = "none";
+});
   async function renderList(query = "") {
     const inventory = await loadInventory();
 
@@ -207,7 +221,7 @@ function showLowStockWarning(inventory) {
 // ======================
 async function addItem() {
   try {
-    const name = document.getElementById("newItemName").value;
+    const name = document.getElementById("newItemName").value.trim();
     const qty = Number(document.getElementById("newItemQty").value);
 
     if (!name || qty <= 0) {
@@ -215,6 +229,19 @@ async function addItem() {
       return;
     }
 
+    // 🔥 ADD IT RIGHT HERE
+    await loadInventory();
+
+    const exists = Object.values(itemsMap).some(
+      item => item.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (exists) {
+      alert("Item already exists");
+      return;
+    }
+
+    // ✅ Only runs if item is new
     await addDoc(collection(db, "inventory"), { name, quantity: qty });
 
     document.getElementById("newItemName").value = "";
@@ -316,6 +343,8 @@ async function updateItem() {
 
   document.getElementById("changeAmount").value = "";
   alert("Inventory updated!");
+  selectedItemId = null;
+  document.getElementById("itemSearch").value = "";
 }
 
 
@@ -324,24 +353,61 @@ async function updateItem() {
 // DOM CONTENT LOADED
 // ======================
 window.addEventListener("DOMContentLoaded", () => {
-  // Add button on Inventory page
-  const addBtn = document.getElementById("addBtn");
-  if (addBtn) addBtn.addEventListener("click", addItem);
-
-  // Update button on Delivery page
-  const updateBtn = document.getElementById("updateBtn");
-  if (updateBtn) updateBtn.addEventListener("click", updateItem);
-  
   const searchInput = document.getElementById("searchInput");
+  const sortSelect = document.getElementById("sortSelect");
+  const filterSelect = document.getElementById("filterSelect");
 
-if (searchInput) {
-  searchInput.addEventListener("input", (e) => {
-    displayInventory(e.target.value);
-  });
+  // 🔥 LOAD SAVED SETTINGS
+  currentSort = localStorage.getItem("sort") || "qty-asc";
+  currentFilter = localStorage.getItem("filter") || "all";
+
+  // APPLY TO UI
+  if (sortSelect) sortSelect.value = currentSort;
+  if (filterSelect) filterSelect.value = currentFilter;
+
+  // 🔽 SORT
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => {
+      currentSort = sortSelect.value;
+      localStorage.setItem("sort", currentSort);
+
+      const searchValue = searchInput?.value || "";
+      displayInventory(searchValue);
+    });
+  }
+
+//   // 🧃 FILTER
+//   if (filterSelect) {
+//     filterSelect.addEventListener("change", () => {
+//       currentFilter = filterSelect.value;
+//       localStorage.setItem("filter", currentFilter);
+
+//       const searchValue = searchInput?.value || "";
+//       displayInventory(searchValue);
+//     });
+//   }
+
+  // 🔍 SEARCH
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      displayInventory(e.target.value);
+    });
+  }
+
+  // ADD ITEM BUTTON
+    const addBtn = document.getElementById("addBtn");
+    if (addBtn) {
+    addBtn.addEventListener("click", addItem);
 }
-  // Initial load
+// Update Inventory button
+const updateBtn = document.getElementById("updateBtn");
+if (updateBtn) {
+  updateBtn.addEventListener("click", updateItem);
+}
+
+  // 🚀 INITIAL LOAD
   displayInventory();
-  //loadDropdown();
+
   setupSearch();
   setupInventorySearch();
 });
