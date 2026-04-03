@@ -114,15 +114,15 @@ async function displayInventory(searchTerm = "") {
   // 🎨 RENDER
   uniqueItems.forEach(item => {
     const card = document.createElement("div");
-    const statusClass = item.quantity < 20 ? "low" : "ok";
-    const statusText = item.quantity < 20 ? "Low Stock" : "In Stock";
+    const statusClass = item.quantity < (item.lowStockThreshold || 20) ? "low" : "ok";
+    const statusText = item.quantity < (item.lowStockThreshold || 20) ? "Low Stock" : "In Stock";
 
     card.className = `card ${statusClass}`;
 
     card.innerHTML = `
       <div class="item-name">${item.name}</div>
       <div class="item-qty">Quantity: ${item.quantity}</div>
-      <div class="badge ${statusClass}">${statusText}</div>
+      <div class="badge ${statusClass}">${statusText} (low stock threshold ${item.lowStockThreshold})</div>
       <input type="number" placeholder="Add stock" class="restockInput" data-id="${item.id}">
       <button class="restockBtn" data-id="${item.id}">Restock</button>
       <button class="deleteBtn" data-id="${item.id}">Delete</button>
@@ -201,7 +201,9 @@ function showLowStockWarning(inventory) {
   const warningDiv = document.getElementById("lowStockWarning");
   if (!warningDiv) return;
 
-  const lowStockItems = inventory.filter(item => item.quantity < 20);
+  const lowStockItems = inventory.filter(
+    item => item.quantity < (item.lowStockThreshold || 20)
+  );
 
   if (lowStockItems.length === 0) {
     warningDiv.innerHTML = "";
@@ -211,7 +213,9 @@ function showLowStockWarning(inventory) {
   warningDiv.innerHTML = `
     <div class="warning-box">
       ⚠️ Low Stock Items:<br>
-      ${lowStockItems.map(item => `${item.name}: ${item.quantity} left`).join("<br>")}
+      ${lowStockItems.map(
+        item => `${item.name}: ${item.quantity} left`
+      ).join("<br>")}
     </div>
   `;
 }
@@ -223,15 +227,14 @@ async function addItem() {
   try {
     const name = document.getElementById("newItemName").value.trim();
     const qty = Number(document.getElementById("newItemQty").value);
+    const threshold = Number(document.getElementById("newItemThreshold")?.value) || 20;
 
     if (!name || qty <= 0) {
       alert("Enter valid item name and quantity");
       return;
     }
 
-    // 🔥 ADD IT RIGHT HERE
     await loadInventory();
-
     const exists = Object.values(itemsMap).some(
       item => item.name.toLowerCase() === name.toLowerCase()
     );
@@ -241,11 +244,15 @@ async function addItem() {
       return;
     }
 
-    // ✅ Only runs if item is new
-    await addDoc(collection(db, "inventory"), { name, quantity: qty });
+    await addDoc(collection(db, "inventory"), { 
+      name, 
+      quantity: qty,
+      lowStockThreshold: threshold
+    });
 
     document.getElementById("newItemName").value = "";
     document.getElementById("newItemQty").value = "";
+    if (document.getElementById("newItemThreshold")) document.getElementById("newItemThreshold").value = "";
 
     displayInventory();
     alert("Item added!");
